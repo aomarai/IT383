@@ -12,13 +12,13 @@ using namespace std;
 
 int calculateMedian(vector<int> &dataHeap);
 int calculateMode(vector<int> &dataHeap);
-int calculateMean(vector<int> &dataHeap);
-void sortSubArray(vector<int> &dataHeap, auto beginIndex, auto endIndex);
+void *sortSubarray(void *args);
 
 struct thread_data 
 {
-    int threadId;
-
+    pthread_t tid;
+    vector<int> threadHeap;
+    int threadSubBegin, threadSubEnd;
 };
 
 int main(int argc, char* argv[])
@@ -31,6 +31,7 @@ int main(int argc, char* argv[])
 
     int numInts;
     int numThreads = stoi(argv[1]);
+    int localN, localBegin, localEnd;
     string line;
     pthread_t threads[numThreads];
     pthread_attr_t attr;
@@ -42,8 +43,9 @@ int main(int argc, char* argv[])
     {
         getline(inputStream, line);
 
-        //Grab the number of integers and store it for later use for parallelization
+        //Grab the number of integers
         numInts = stoi(line.substr(2));
+        
 
         //Parse the remaining integers in the file and insert into vector
         while (getline(inputStream, line))
@@ -55,27 +57,38 @@ int main(int argc, char* argv[])
     //Close the input stream for reading
     inputStream.close();
 
-    //Heapsort the entire array for serial
-    // sort_heap(dataHeap.begin(), dataHeap.end());
+    //Split the vector into subarrays by the number of threads
+    thread_data threadData[numThreads];
+    localN = numInts / numThreads;
+    localBegin = 0;
+    localEnd = localBegin + localN;
 
     //Initialize and set thread attributes
     pthread_attr_init(&attr);
+
+    //Create threads from numThreads
     for (int i = 0; i < numThreads; i++)
     {
         cout << "Creating thread " << i << endl;
+
+    }
+
+    //Join threads after completion
+    for (int i = 0; i < numThreads; i++)
+    {
+        cout << "Joining thread " << i << endl;
     }
 
 
 
     //Test prints
-    cout << "DEBUG STATS\n--------------------------------\nHeap size: " << dataHeap.size() << endl;
+    cout << "\nDEBUG STATS\n--------------------------------\nHeap size: " << dataHeap.size() << endl;
     for (int i = 0; i < 100; i++)
     {
         cout << dataHeap.at(i) << " ";
     }
     cout << "\nHeap median: " << calculateMedian(dataHeap) << endl;
     cout << "Heap mode: " << calculateMode(dataHeap) << endl;
-    cout << "Heap mean: " << calculateMean(dataHeap) << endl;
     cout << "# Threads: " << numThreads << endl;
 }
 
@@ -100,11 +113,6 @@ int calculateMedian(vector<int> &dataHeap)
             return dataHeap[heapSize / 2];
         }
     }
-}
-
-int calculateMean(vector<int> &dataHeap)
-{
-    return accumulate(dataHeap.begin(), dataHeap.end(), 0.0) / dataHeap.size();
 }
 
 int calculateMode(vector<int> &dataHeap)
@@ -137,7 +145,11 @@ int calculateMode(vector<int> &dataHeap)
     return mode;    
 }
 
-void sortSubArray(vector<int> &dataHeap, auto beginIndex, auto endIndex)
+//Each thread will call this function to sort their own subarray with heapsort
+void *sortSubarray(void *args)
 {
-    
+    thread_data *threadData;
+
+    //Sort the thread's subarray
+    sort_heap(threadData->threadSubBegin, threadData->threadSubEnd);
 }
