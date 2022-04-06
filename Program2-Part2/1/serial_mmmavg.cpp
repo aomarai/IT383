@@ -12,6 +12,7 @@ using namespace std;
 
 int calculateMedian(vector<int> &dataHeap);
 int calculateMode(vector<int> &dataHeap);
+int calculateMean(vector<int> &dataHeap);
 
 int main(int argc, char* argv[])
 {
@@ -111,4 +112,9 @@ int calculateMode(vector<int> &dataHeap)
         }
     }
     return mode;    
+}
+
+int calculateMean(vector<int> &dataHeap)
+{
+    return accumulate(dataHeap.begin(), dataHeap.end(), 0.0) / dataHeap.size();
 }
