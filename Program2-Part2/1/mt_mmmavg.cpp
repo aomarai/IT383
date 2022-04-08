@@ -11,7 +11,7 @@
 using namespace std;
 
 int calculateMedian(vector<int> *dataHeap);
-int calculateMode(vector<int> *dataHeap);
+void calculateMode(vector<int> *dataHeap);
 void *sortSubarray(void *args);
 int calculateMean(vector<int> *dataHeap);
 
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     //Create threads from numThreads
     for (int i = 0; i < numThreads; i++)
     {
-        cout << "Creating thread " << i << endl;
+        //cout << "Creating thread " << i << endl;
         threadData[i].threadSubBegin = localBegin;
         threadData[i].threadSubEnd = localEnd;
         threadData[i].tid = i;
@@ -86,15 +86,8 @@ int main(int argc, char* argv[])
     //Join threads after completion and grab required indexes
     for (int i = 0; i < numThreads; i++)
     {
-        cout << "Joining thread " << i << endl;
+        //cout << "Joining thread " << i << endl;
         pthread_join(threads[i],  NULL);
-    }
-
-    // //Print out indices for testing
-    cout << subIndicies->size() << endl;
-    for (int i = 0; i < subIndicies->size(); i++)
-    {
-        cout << subIndicies->at(i) << " ";
     }
 
     //Merge the subarrays into a new array by merging two at a time
@@ -138,15 +131,15 @@ int main(int argc, char* argv[])
     delete[](dataHeap);
 
     //Test prints
-    cout << "\nDEBUG STATS\n--------------------------------\nHeap size: " << sortedHeap->size() << endl;
-    for (int i = 0; i < 250; i++)
-    {
-        cout << sortedHeap->at(i) << " ";
-    }
-    cout << "\nHeap median: " << calculateMedian(sortedHeap) << endl;
+    // cout << "\nDEBUG STATS\n--------------------------------\nHeap size: " << sortedHeap->size() << endl;
+    // for (int i = 0; i < 250; i++)
+    // {
+    //     cout << sortedHeap->at(i) << " ";
+    // }
+    cout << "Heap median: " << calculateMedian(sortedHeap) << endl;
     cout << "Heap mean: " << calculateMean(sortedHeap) << endl;
-    cout << "Heap mode: " << calculateMode(sortedHeap) << endl;
-    cout << "# Threads: " << numThreads << endl;
+    calculateMode(sortedHeap);
+    //cout << "# Threads: " << numThreads << endl;
 
     //Remove memory leaks
     delete[](threads);
@@ -161,13 +154,13 @@ void *sortSubarray (void *args)
 {
     thread_data threadData = *(thread_data*) args;
 
-    printf("\nExecuting Thread ID: %lu\nThread subarray begin: %d\nThread subarray end: %d\n\n", threadData.tid, threadData.threadSubBegin, threadData.threadSubEnd);
+    //printf("\nExecuting Thread ID: %lu\nThread subarray begin: %d\nThread subarray end: %d\n\n", threadData.tid, threadData.threadSubBegin, threadData.threadSubEnd);
 
     //Sort the thread's subarray
     sort_heap((threadData.threadHeap->begin() + threadData.threadSubBegin),
      (threadData.threadHeap->begin() + threadData.threadSubEnd));
 
-    printf("Thread %lu has executed\n", threadData.tid);
+    //printf("Thread %lu has executed\n", threadData.tid);
     
     return 0;
 }
@@ -196,7 +189,7 @@ int calculateMedian(vector<int> *dataHeap)
 }
 
 //Only functions on a sorted array.
-int calculateMode(vector<int> *dataHeap)
+void calculateMode(vector<int> *dataHeap)
 {
     int curNum = dataHeap->at(0);
     int mode = curNum;
@@ -223,7 +216,7 @@ int calculateMode(vector<int> *dataHeap)
             curNum = dataHeap->at(i);
         }
     }
-    return mode;    
+    cout << "Heap mode: " << mode << " with " << countMode << " occurences\n";
 }
 
 int calculateMean(vector<int> *dataHeap)

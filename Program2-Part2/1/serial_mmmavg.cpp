@@ -51,11 +51,11 @@ int main(int argc, char* argv[])
     sort_heap(dataHeap.begin(), dataHeap.end());
 
     //Test prints
-    cout << "DEBUG STATS\n--------------------------------\nHeap size: " << dataHeap.size() << endl;
-    for (int i = 0; i < 100; i++)
-    {
-        cout << dataHeap.at(i) << " ";
-    }
+    // cout << "DEBUG STATS\n--------------------------------\nHeap size: " << dataHeap.size() << endl;
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     cout << dataHeap.at(i) << " ";
+    // }
     cout << "\nHeap median: " << calculateMedian(dataHeap) << endl;
     cout << "Heap mode: " << calculateMode(dataHeap) << endl;
     cout << "# Threads: " << numThreads << endl;
