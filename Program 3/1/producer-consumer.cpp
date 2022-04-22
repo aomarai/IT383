@@ -18,14 +18,14 @@ struct threadArgs
 
 void *produce(void *args)
 {
-    int nextProduced;
+    int nextProduced = 1;
+    bool producing = true;
     threadArgs threadData = *(threadArgs *)args;
-    // Produce an item in nextProduced by adding 1 to the counter value
-    nextProduced = *(threadData.counter) + 1;
 
-    while (true)
+    // If nextProduced is over one million, stop producing
+    while (nextProduced < 1000000)
     {
-        // Compare the counter against the buffer size
+        // While the buffer is full, do nothing
         while (*(threadData.counter) == BUFFER_SIZE)
         {
             ; // Do nothing
@@ -33,7 +33,11 @@ void *produce(void *args)
         threadData.buffer[threadData.in] = nextProduced;
         threadData.in = (threadData.in + 1) % BUFFER_SIZE;
         threadData.counter++;
+        nextProduced++;
     }
+
+    // All values have been inserted, so exit thread
+    pthread_exit(NULL);
 }
 
 void *consume(void *args)
@@ -46,11 +50,20 @@ void *consume(void *args)
         {
             ; // Do nothing
         }
+        // Read the next item to be consumed
         nextConsumed = threadData.buffer[threadData.out];
-        threadData.out = (threadData.out + 1) % BUFFER_SIZE;
-        threadData.counter--;
-
-        // Consume the item in nextConsumed
+        // Check if nextConsumed's previous value is the integer - 1 and nextConsumed's next is + 1
+        if (nextConsumed == *(threadData.counter) - 1 && threadData.buffer[(threadData.out + 1) % BUFFER_SIZE] == nextConsumed + 1)
+        {
+            threadData.out = (threadData.out + 1) % BUFFER_SIZE;
+            threadData.counter--;
+        }
+        // If not sequential, then print the next number in the buffer and print percentage of the sequence completed
+        else
+        {
+            printf("%d\n", nextConsumed);
+            printf("%f\n", (float)(*(threadData.counter) - 1) / (float)nextConsumed * 100);
+        }
     }
 }
 
@@ -59,8 +72,16 @@ int main()
     int *counter = 0;
     int in = 0;
     int out = 0;
-    int nextProduced = 0;
     int *circBuffer = new int[BUFFER_SIZE];
     pthread_t tid;
     pthread_attr_t attr;
+
+    // Create a producer thread
+    pthread_attr_init(&attr);
+    threadArgs *producerArgs = new threadArgs;
+    producerArgs->counter = counter;
+    producerArgs->buffer = circBuffer;
+    producerArgs->in = in;
+    producerArgs->out = out;
+    pthread_create(&tid, &attr, produce, (void *)producerArgs);
 }
