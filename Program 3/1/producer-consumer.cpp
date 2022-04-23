@@ -4,105 +4,103 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <atomic>
 
 #define BUFFER_SIZE 5
+#define SEQ_MAX 1000000
+bool terminationDetected = false;
 
 struct threadArgs
 {
     pthread_t tid;
     int *counter;
     int *buffer;
-    int in;
-    int out;
 };
 
 void *produce(void *args)
 {
+    // printf("Producer thread %lu\n", ((threadArgs *)args)->tid);
     int nextProduced = 1;
-    bool producing = true;
-    threadArgs threadData = *(threadArgs *)args;
+    int in = 0;
+    int *counter = ((threadArgs *)args)->counter;
+    int *buffer = ((threadArgs *)args)->buffer;
 
-    // If nextProduced is over one million, stop producing
-    while (nextProduced < 1000000)
+    while (nextProduced <= SEQ_MAX && !terminationDetected)
     {
-        // While the buffer is full, do nothing
-        while (*(threadData.counter) == BUFFER_SIZE)
+        while (*counter == BUFFER_SIZE && !terminationDetected)
         {
-            printf("Producer waiting\n");
-            ; // Do nothing
+            // Wait for consumer to consume by doing nothing
+            ;
         }
-        threadData.buffer[threadData.in] = nextProduced;
-        threadData.in = (threadData.in + 1) % BUFFER_SIZE;
-        threadData.counter++;
+        //printf("Producer is producing %d\n", nextProduced);
+        buffer[in] = nextProduced;
+        in = (in + 1) % BUFFER_SIZE;
+        (*counter)++;
         nextProduced++;
-
-        printf("Produced %d\n", nextProduced);
     }
-
-    // All values have been inserted, so exit thread
+    //printf("Producer thread successfully produced %d items\n", nextProduced - 1);
     pthread_exit(NULL);
 }
 
 void *consume(void *args)
 {
-    int nextConsumed;
-    threadArgs threadData = *(threadArgs *)args;
-    while (true)
-    {
-        //PRint out the counter
-        printf("Counter: %d\n", *(threadData.counter));
-        while (*(threadData.counter) == 0)
-        {
-            printf("Consumer waiting\n");
-            ; // Do nothing
-        }
-        // Read the next item to be consumed
-        nextConsumed = threadData.buffer[threadData.out];
-        // Check if nextConsumed's previous value is the integer - 1 and nextConsumed's next is + 1
-        if (nextConsumed == *(threadData.counter) - 1 && threadData.buffer[(threadData.out + 1) % BUFFER_SIZE] == nextConsumed + 1)
-        {
-            threadData.out = (threadData.out + 1) % BUFFER_SIZE;
-            threadData.counter--;
-            printf("Consumed %d\n", nextConsumed);
-        }
-        // If not sequential, then print the next number in the buffer and print percentage of the sequence completed
-        else
-        {
-            printf("%d\n", nextConsumed);
-            printf("%f\n", (float)(*(threadData.counter) - 1) / (float)nextConsumed * 100);
-        }
-    }
+    // printf("Consumer thread %lu\n", ((threadArgs *)args)->tid);
+    int nextConsumed = 0;
+    int out = 0;
+    int *buffer = ((threadArgs *)args)->buffer;
+    int *counter = ((threadArgs *)args)->counter;
 
+    while (nextConsumed <= SEQ_MAX - 1 && !terminationDetected)
+    {
+        //printf("Consumer counter is %d\n", *counter);
+        while (*counter == 0)
+        {
+            // Do nothing
+            ;
+        }
+
+        // Check if the next item in the buffer is nextConsumed + 1
+        if (nextConsumed + 1 != buffer[out])
+        {
+            printf("The consumer received up to %d, but the next incorrect item in the buffer is %d\n", nextConsumed, buffer[out]);
+            terminationDetected = true;
+            pthread_exit(NULL);
+        }
+
+        //printf("Consumed %d\n", buffer[out]);
+        nextConsumed = buffer[out];
+        out = (out + 1) % BUFFER_SIZE;
+        (*counter)--;
+    }
+    printf("Consumer thread successfully received all %d integers\n", SEQ_MAX);
     pthread_exit(NULL);
 }
 
 int main()
 {
-    int *counter = 0;
-    int in = 0;
-    int out = 0;
+    int counter = 0;
+    int *ctPtr = &counter;
     int *circBuffer = new int[BUFFER_SIZE];
-    pthread_t tid;
+    pthread_t tid = 0;
     pthread_attr_t attr;
 
-    // Create a producer thread
-    printf("Creating producer thread\n");
+    // Create producer and consumer threads
     pthread_attr_init(&attr);
     threadArgs *producerArgs = new threadArgs;
-    producerArgs->counter = counter;
-    producerArgs->buffer = circBuffer;
-    producerArgs->in = in;
-    producerArgs->out = out;
-    pthread_create(&tid, &attr, produce, (void *)producerArgs);
-
-    // Create a consumer thread
-    printf("Creating consumer thread\n");
-    tid++;
-    pthread_attr_init(&attr);
     threadArgs *consumerArgs = new threadArgs;
-    consumerArgs->counter = counter;
-    consumerArgs->buffer = circBuffer;
-    consumerArgs->in = in;
-    consumerArgs->out = out;
-    pthread_create(&tid, &attr, consume, (void *)consumerArgs);
+    producerArgs->counter = consumerArgs->counter = ctPtr;
+    producerArgs->buffer = consumerArgs->buffer = circBuffer;
+    producerArgs->tid = tid;
+    consumerArgs->tid = tid++;
+
+    // Create producer thread
+    pthread_create(&producerArgs->tid, &attr, produce, (void *)producerArgs);
+    pthread_create(&consumerArgs->tid, &attr, consume, (void *)consumerArgs);
+
+    // Wait for producer and consumer threads to finish
+    pthread_join(producerArgs->tid, NULL);
+    pthread_join(consumerArgs->tid, NULL);
+    //printf("Producer and consumer threads finished successfully.\n");
+
+    return 0;
 }
