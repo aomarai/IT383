@@ -32,7 +32,7 @@ void *produce(void *args)
 
         // Insert a random word from words vector inside threadArgs struct
         wordString = (*((threadArgs *)args)->words)[rand() % (*((threadArgs *)args)->words).size()];
-        printf("Producer %lu is inserting %s\n", ((threadArgs *)args)->tid, wordString.c_str());
+        printf("[Producer %lu] Inserted: %s\n", pthread_self(), wordString.c_str());
         randWord = atoi(wordString.c_str());
         insert_item(randWord);
     }
@@ -50,7 +50,7 @@ void *consume(void *args)
 
         //Print the removed word and thread id
         printf("Consumer %lu removed %d\n", ((threadArgs *)args)->tid, remove_item(&randWord));
-        
+
         // Remove a random word from buffer inside threadArgs struct
         remove_item(&randWord);
     }
