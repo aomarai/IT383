@@ -5,16 +5,23 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <semaphore.h>
 using namespace std;
 
-void* produce(void* args)
+struct threadArgs
 {
+    pthread_t tid;
+    pthread_mutex_t *mutex;
+    sem_t *full;
+    sem_t *empty;
+};
 
+void *produce(void *args)
+{
 }
 
-void* consume(void* args)
+void *consume(void *args)
 {
-
 }
 
 int main(int argc, char *argv[])
@@ -25,11 +32,22 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    //Grab the arguments from the command line
+    pthread_mutex_t mutex;
+    sem_t full, empty;
+    pthread_mutex_t *mutexPtr = &mutex;
+    sem_t *fullPtr = &full;
+    sem_t *emptyPtr = &empty;
+
+    // Grab the arguments from the command line
     int sleepLength = atoi(argv[1]);
     int numProducerThreads = atoi(argv[2]);
     int numConsumerThreads = atoi(argv[3]);
 
-    //Initialize the buffer
+    // Initialize the buffer
     bufferitem buffer[BUFFER_SIZE];
+
+    // Initialize locks
+    pthread_mutex_init(&mutex, NULL);
+    sem_init(&empty, 0, BUFFER_SIZE);
+    sem_init(&full, 0, 0);
 }
