@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <semaphore.h>
 
-// The buffer
 bufferitem buffer[BUFFER_SIZE];
 sem_t full, empty;
 int insertIndex = 0;
