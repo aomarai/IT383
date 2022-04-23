@@ -28,12 +28,15 @@ void *produce(void *args)
         // While the buffer is full, do nothing
         while (*(threadData.counter) == BUFFER_SIZE)
         {
+            printf("Producer waiting\n");
             ; // Do nothing
         }
         threadData.buffer[threadData.in] = nextProduced;
         threadData.in = (threadData.in + 1) % BUFFER_SIZE;
         threadData.counter++;
         nextProduced++;
+
+        printf("Produced %d\n", nextProduced);
     }
 
     // All values have been inserted, so exit thread
@@ -46,8 +49,11 @@ void *consume(void *args)
     threadArgs threadData = *(threadArgs *)args;
     while (true)
     {
+        //PRint out the counter
+        printf("Counter: %d\n", *(threadData.counter));
         while (*(threadData.counter) == 0)
         {
+            printf("Consumer waiting\n");
             ; // Do nothing
         }
         // Read the next item to be consumed
@@ -57,6 +63,7 @@ void *consume(void *args)
         {
             threadData.out = (threadData.out + 1) % BUFFER_SIZE;
             threadData.counter--;
+            printf("Consumed %d\n", nextConsumed);
         }
         // If not sequential, then print the next number in the buffer and print percentage of the sequence completed
         else
@@ -65,6 +72,8 @@ void *consume(void *args)
             printf("%f\n", (float)(*(threadData.counter) - 1) / (float)nextConsumed * 100);
         }
     }
+
+    pthread_exit(NULL);
 }
 
 int main()
@@ -77,6 +86,7 @@ int main()
     pthread_attr_t attr;
 
     // Create a producer thread
+    printf("Creating producer thread\n");
     pthread_attr_init(&attr);
     threadArgs *producerArgs = new threadArgs;
     producerArgs->counter = counter;
@@ -84,4 +94,15 @@ int main()
     producerArgs->in = in;
     producerArgs->out = out;
     pthread_create(&tid, &attr, produce, (void *)producerArgs);
+
+    // Create a consumer thread
+    printf("Creating consumer thread\n");
+    tid++;
+    pthread_attr_init(&attr);
+    threadArgs *consumerArgs = new threadArgs;
+    consumerArgs->counter = counter;
+    consumerArgs->buffer = circBuffer;
+    consumerArgs->in = in;
+    consumerArgs->out = out;
+    pthread_create(&tid, &attr, consume, (void *)consumerArgs);
 }
